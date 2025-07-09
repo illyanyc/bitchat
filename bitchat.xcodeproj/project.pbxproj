@@ -139,12 +139,15 @@
 		8DE9CDF66D4E52D268851048 /* MessagePaddingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagePaddingTests.swift; sourceTree = "<group>"; };
 		997D512074C64904D75DDD40 /* bitchat.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = bitchat.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9AC141774F6671FCDC347DC7 /* LinkPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkPreviewView.swift; sourceTree = "<group>"; };
+		B1234567890ABCDEF1234567 /* ImagePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePicker.swift; sourceTree = "<group>"; };
+		B2345678901ABCDEF2345678 /* FullscreenImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullscreenImageView.swift; sourceTree = "<group>"; };
 		A08E03AA0C63E97C91749AEC /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A2136C3E22D02D4A8DBE7EAB /* BinaryProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinaryProtocol.swift; sourceTree = "<group>"; };
 		AA4D7595A613F7ED3B386132 /* MessageRetryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageRetryService.swift; sourceTree = "<group>"; };
 		C0DB1DE27F0AAB5092663E8E /* bitchatTests_iOS.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = bitchatTests_iOS.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C1B378C16594575FCC7F9C75 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		CB043CA5EEB9AC8B07D61E97 /* OptimizedBloomFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OptimizedBloomFilter.swift; sourceTree = "<group>"; };
+		C3456789012ABCDEF7345678 /* ImageCompressionUtil.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCompressionUtil.swift; sourceTree = "<group>"; };
 		D5C3D880FF8AE1673B20E1E3 /* BluetoothMeshService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothMeshService.swift; sourceTree = "<group>"; };
 		D69A18D27F9A565FD6041E12 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		E6B8F7B7D55092C2540A7996 /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
@@ -195,6 +198,7 @@
 				ED176FF3B274E35C2D827894 /* BatteryOptimizer.swift */,
 				32F149C43D1915831B60FE09 /* CompressionUtil.swift */,
 				CB043CA5EEB9AC8B07D61E97 /* OptimizedBloomFilter.swift */,
+				C3456789012ABCDEF7345678 /* ImageCompressionUtil.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -227,6 +231,8 @@
 				763E0DBA9492A654FC0CDCB9 /* AppInfoView.swift */,
 				A08E03AA0C63E97C91749AEC /* ContentView.swift */,
 				9AC141774F6671FCDC347DC7 /* LinkPreviewView.swift */,
+				B1234567890ABCDEF1234567 /* ImagePicker.swift */,
+				B2345678901ABCDEF2345678 /* FullscreenImageView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -439,6 +445,9 @@
 				D450CF41F207BDE1A1AAA56E /* ChatViewModel.swift in Sources */,
 				B0CA7796B2B2AC2B33F84548 /* CompressionUtil.swift in Sources */,
 				92D34E7A07C990C8A815B0CE /* ContentView.swift in Sources */,
+				C3456789012ABCDEF9345678 /* ImageCompressionUtil.swift in Sources */,
+				B1234567890ABCDEF5234567 /* ImagePicker.swift in Sources */,
+				B2345678901ABCDEF6234567 /* FullscreenImageView.swift in Sources */,
 				8DCEEA289EF7C49E7CD38B08 /* DeliveryTracker.swift in Sources */,
 				739429DFDE5C5829CF70DA7D /* EncryptionService.swift in Sources */,
 				FB8819B4C84FAFEF5C36B216 /* KeychainManager.swift in Sources */,
@@ -464,6 +473,9 @@
 				7576A357B278E5733E9D9F33 /* ChatViewModel.swift in Sources */,
 				7DCA0DBCB8884E3B31C7BCE3 /* CompressionUtil.swift in Sources */,
 				1D9674FA5F998503831DC281 /* ContentView.swift in Sources */,
+				C3456789012ABCDEF8345678 /* ImageCompressionUtil.swift in Sources */,
+				B1234567890ABCDEF3234567 /* ImagePicker.swift in Sources */,
+				B2345678901ABCDEF4234567 /* FullscreenImageView.swift in Sources */,
 				CD0AE423F03AC52BAFC16834 /* DeliveryTracker.swift in Sources */,
 				DDA1DFAB1FF7AADE52DC0F53 /* EncryptionService.swift in Sources */,
 				8F737CE0435792CC2AD65FCB /* KeychainManager.swift in Sources */,

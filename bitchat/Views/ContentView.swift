@@ -27,6 +27,13 @@ struct ContentView: View {
     @State private var showCommandSuggestions = false
     @State private var commandSuggestions: [String] = []
     @State private var showLeaveChannelAlert = false
+    @State private var selectedImage: UIImage? = nil
+    @State private var showImagePicker = false
+    @State private var showImageSourceOptions = false
+    @State private var pendingImageData: Data? = nil
+    @State private var showFullscreenImage = false
+    @State private var fullscreenImageData: Data? = nil
+    @State private var useCamera = false
     
     var body: some View {
         ZStack {
@@ -152,6 +159,50 @@ struct ContentView: View {
             Button("OK", role: .cancel) { }
         } message: {
             Text("The password you entered is incorrect. Please try again.")
+        }
+        #if os(iOS)
+        .actionSheet(isPresented: $showImageSourceOptions) {
+            ActionSheet(title: Text("Select Photo"), buttons: [
+                .default(Text("Take Photo")) {
+                    if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                        selectedImage = nil
+                        useCamera = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            showImagePicker = true
+                        }
+                    }
+                },
+                .default(Text("Choose from Library")) {
+                    selectedImage = nil
+                    useCamera = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        showImagePicker = true
+                    }
+                },
+                .cancel()
+            ])
+        }
+        #endif
+        .sheet(isPresented: $showImagePicker) {
+            #if os(iOS)
+            ImagePicker(selectedImage: $selectedImage, sourceType: useCamera ? .camera : .photoLibrary)
+            #else
+            ImagePicker(selectedImage: $selectedImage, sourceType: .photoLibrary)
+            #endif
+        }
+        .onChange(of: selectedImage) { newImage in
+            if let image = newImage {
+                // Compress the image
+                if let compressedData = ImageCompressionUtil.compressImage(image) {
+                    pendingImageData = compressedData
+                }
+                selectedImage = nil
+            }
+        }
+        .fullScreenCover(isPresented: $showFullscreenImage) {
+            if let imageData = fullscreenImageData {
+                FullscreenImageView(imageData: imageData, isPresented: $showFullscreenImage)
+            }
         }
     }
     
@@ -425,36 +476,94 @@ struct ContentView: View {
                             } else {
                                 // Regular messages with natural text wrapping
                                 VStack(alignment: .leading, spacing: 8) {
-                                    HStack(alignment: .top, spacing: 0) {
-                                        // Single text view for natural wrapping
-                                        Text(viewModel.formatMessageAsText(message, colorScheme: themeManager.isDarkMode ? .dark : .light))
-                                            .textSelection(.enabled)
-                                            .fixedSize(horizontal: false, vertical: true)
-                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                    // Check if message contains an image
+                                    if ImageCompressionUtil.containsImage(message.content) {
+                                        // Extract text and image parts
+                                        let parts = message.content.components(separatedBy: "<image>")
+                                        let textPart = parts.first ?? ""
                                         
-                                        // Delivery status indicator for private messages
-                                        if message.isPrivate && message.sender == viewModel.nickname,
-                                           let status = message.deliveryStatus {
-                                            DeliveryStatusView(status: status, colorScheme: themeManager.isDarkMode ? .dark : .light)
-                                                .padding(.leading, 4)
+                                        // Show text part if exists
+                                        if !textPart.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                            HStack(alignment: .top, spacing: 0) {
+                                                Text(viewModel.formatMessageAsText(BitchatMessage(
+                                                    id: message.id,
+                                                    sender: message.sender,
+                                                    content: textPart,
+                                                    timestamp: message.timestamp,
+                                                    isRelay: message.isRelay,
+                                                    originalSender: message.originalSender,
+                                                    isPrivate: message.isPrivate,
+                                                    recipientNickname: message.recipientNickname,
+                                                    senderPeerID: message.senderPeerID,
+                                                    mentions: message.mentions,
+                                                    channel: message.channel
+                                                ), colorScheme: themeManager.isDarkMode ? .dark : .light))
+                                                    .textSelection(.enabled)
+                                                    .fixedSize(horizontal: false, vertical: true)
+                                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                                
+                                                // Delivery status indicator for private messages
+                                                if message.isPrivate && message.sender == viewModel.nickname,
+                                                   let status = message.deliveryStatus {
+                                                    DeliveryStatusView(status: status, colorScheme: themeManager.isDarkMode ? .dark : .light)
+                                                        .padding(.leading, 4)
+                                                }
+                                            }
                                         }
-                                    }
-                                    
-                                    // Check for links and show preview
-                                    if let markdownLink = message.content.extractMarkdownLink() {
-                                        // Don't show link preview if the message is just the emoji
-                                        let cleanContent = message.content.trimmingCharacters(in: .whitespacesAndNewlines)
-                                        if cleanContent.hasPrefix("👇") {
-                                            LinkPreviewView(url: markdownLink.url, title: markdownLink.title)
-                                                .padding(.top, 4)
+                                        
+                                        // Show image
+                                        if let imageData = ImageCompressionUtil.decodeImageMessage(message.content) {
+                                            if let uiImage = UIImage(data: imageData) {
+                                                Button(action: {
+                                                    fullscreenImageData = imageData
+                                                    showFullscreenImage = true
+                                                }) {
+                                                    Image(uiImage: uiImage)
+                                                        .resizable()
+                                                        .aspectRatio(contentMode: .fit)
+                                                        .frame(maxWidth: 300)
+                                                        .cornerRadius(8)
+                                                        .overlay(
+                                                            RoundedRectangle(cornerRadius: 8)
+                                                                .stroke(themeManager.dividerColor, lineWidth: 1)
+                                                        )
+                                                }
+                                                .buttonStyle(.plain)
+                                            }
                                         }
                                     } else {
-                                        // Check for plain URLs
-                                        let urls = message.content.extractURLs()
-                                        let _ = urls.isEmpty ? nil : print("DEBUG: Found \(urls.count) plain URLs in message")
-                                        ForEach(urls.prefix(3), id: \.url) { urlInfo in
-                                            LinkPreviewView(url: urlInfo.url, title: nil)
-                                                .padding(.top, 4)
+                                        // Regular text message
+                                        HStack(alignment: .top, spacing: 0) {
+                                            // Single text view for natural wrapping
+                                            Text(viewModel.formatMessageAsText(message, colorScheme: themeManager.isDarkMode ? .dark : .light))
+                                                .textSelection(.enabled)
+                                                .fixedSize(horizontal: false, vertical: true)
+                                                .frame(maxWidth: .infinity, alignment: .leading)
+                                            
+                                            // Delivery status indicator for private messages
+                                            if message.isPrivate && message.sender == viewModel.nickname,
+                                               let status = message.deliveryStatus {
+                                                DeliveryStatusView(status: status, colorScheme: themeManager.isDarkMode ? .dark : .light)
+                                                    .padding(.leading, 4)
+                                            }
+                                        }
+                                        
+                                        // Check for links and show preview
+                                        if let markdownLink = message.content.extractMarkdownLink() {
+                                            // Don't show link preview if the message is just the emoji
+                                            let cleanContent = message.content.trimmingCharacters(in: .whitespacesAndNewlines)
+                                            if cleanContent.hasPrefix("👇") {
+                                                LinkPreviewView(url: markdownLink.url, title: markdownLink.title)
+                                                    .padding(.top, 4)
+                                            }
+                                        } else {
+                                            // Check for plain URLs
+                                            let urls = message.content.extractURLs()
+                                            let _ = urls.isEmpty ? nil : print("DEBUG: Found \(urls.count) plain URLs in message")
+                                            ForEach(urls.prefix(3), id: \.url) { urlInfo in
+                                                LinkPreviewView(url: urlInfo.url, title: nil)
+                                                    .padding(.top, 4)
+                                            }
                                         }
                                     }
                                 }
@@ -618,6 +727,35 @@ struct ContentView: View {
                 .padding(.horizontal, 12)
             }
             
+            // Show pending image preview
+            if pendingImageData != nil {
+                HStack {
+                    if let data = pendingImageData, let image = UIImage(data: data) {
+                        Image(uiImage: image)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 60, height: 60)
+                            .clipped()
+                            .cornerRadius(8)
+                            .overlay(
+                                Button(action: {
+                                    pendingImageData = nil
+                                }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.system(size: 20))
+                                        .foregroundColor(.white)
+                                        .background(Circle().fill(Color.black.opacity(0.5)))
+                                }
+                                .offset(x: -5, y: -5),
+                                alignment: .topTrailing
+                            )
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 4)
+                    }
+                    Spacer()
+                }
+            }
+            
             HStack(alignment: .center, spacing: 4) {
             if viewModel.selectedPrivateChatPeer != nil {
                 Text("<@\(viewModel.nickname)> →")
@@ -641,6 +779,22 @@ struct ContentView: View {
                     .fixedSize()
                     .padding(.leading, 12)
             }
+            
+            // Photo button
+            Button(action: {
+                #if os(iOS)
+                showImageSourceOptions = true
+                #else
+                selectedImage = nil
+                showImagePicker = true
+                #endif
+            }) {
+                Image(systemName: "photo")
+                    .font(.system(size: 18))
+                    .foregroundColor(themeManager.primaryTextColor)
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 4)
             
             TextField("", text: $messageText)
                 .textFieldStyle(.plain)
@@ -712,13 +866,14 @@ struct ContentView: View {
             Button(action: sendMessage) {
                 Image(systemName: "arrow.up.circle.fill")
                     .font(.system(size: 20))
-                    .foregroundColor(messageText.isEmpty ? Color.gray :
+                    .foregroundColor((messageText.isEmpty && pendingImageData == nil) ? Color.gray :
                                             (viewModel.selectedPrivateChatPeer != nil ||
                                              (viewModel.currentChannel != nil && viewModel.passwordProtectedChannels.contains(viewModel.currentChannel ?? "")))
                                              ? themeManager.privateMessageColor : themeManager.primaryTextColor)
             }
             .buttonStyle(.plain)
             .padding(.trailing, 12)
+            .disabled(messageText.isEmpty && pendingImageData == nil)
             }
             .padding(.vertical, 8)
             .background(themeManager.backgroundColor.opacity(0.95))
@@ -729,8 +884,23 @@ struct ContentView: View {
     }
     
     private func sendMessage() {
-        viewModel.sendMessage(messageText)
-        messageText = ""
+        var finalContent = messageText
+        
+        // If we have a pending image, encode it into the message
+        if let imageData = pendingImageData {
+            let imageContent = ImageCompressionUtil.encodeImageMessage(imageData)
+            if !finalContent.isEmpty {
+                finalContent = "\(finalContent)\n\(imageContent)"
+            } else {
+                finalContent = imageContent
+            }
+            pendingImageData = nil
+        }
+        
+        if !finalContent.isEmpty {
+            viewModel.sendMessage(finalContent)
+            messageText = ""
+        }
     }
     
     @ViewBuilder
